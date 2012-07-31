@@ -51,10 +51,10 @@ class DroneControl extends MaxObject {
       drone = new ARDrone( InetAddress.getByName(ip) )
      	post("connecting to ARDrone at " + ip + " ..." )
       drone.connect
-      println("ARDrone Connected.")
+      post("ARDrone Connected.")
       drone.clearEmergencySignal
       drone.waitForReady(5000)
-      println("ARDrone ready!")
+      post("ARDrone ready!")
       drone.trim
       ready = true
 
@@ -116,8 +116,10 @@ class DroneControl extends MaxObject {
     val sin = math.sin(w.toRadians)
     val d = (dest - pos).normalize
     var ud = d.y * vmoveSpeed //.1f
-    var fb = -d.x*cos - d.z*sin  //d.x*cos - d.z*sin
-    var lr = -d.x*sin + d.z*cos  //-d.x*sin - d.z*cos
+
+    //assumes drone oriented looking down negative z axis, positive x axis to its right
+    var fb = d.x*sin + d.z*cos //-d.x*cos - d.z*sin  //d.x*cos - d.z*sin
+    var lr = d.x*cos - d.z*sin //-d.x*sin + d.z*cos  //-d.x*sin - d.z*cos
     fb = fb * moveSpeed //.1f
     lr = lr * moveSpeed //.1f
     //println("dp: " + dp + "  "+lr+" "+fb+" "+ud)
