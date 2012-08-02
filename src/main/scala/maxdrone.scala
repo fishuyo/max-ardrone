@@ -6,8 +6,6 @@
 *
 */
 
-
-
 import com.fishuyo.maths.Vec3
 
 import com.codeminders.ardrone._
@@ -63,7 +61,7 @@ class DroneControl extends MaxObject {
     }
   }
 
-  def disconnect() = { if( !flying ){ drone.disconnect; Thread.sleep(1000); drone = null } }
+  def disconnect() = { if( !flying ){ drone.disconnect; Thread.sleep(100); drone = null; post("Drone disconnected.")} }
   def clearEmergency() = drone.clearEmergencySignal
   def trim() = drone.trim
   def takeOff() = { drone.takeOff; flying = true}
@@ -89,9 +87,9 @@ class DroneControl extends MaxObject {
 
   def hover = { navigating=false; drone.hover }
 
-  def step(x:Float,y:Float,z:Float,w:Float ):Any = {
+  def step(x:Float,y:Float,z:Float,w:Float ){
 
-    if( !ready || !flying || !navigating ) return null
+    if( !ready || !flying || !navigating ) return
 
     val p = Vec3(x,y,z)
     vel = p - pos
@@ -103,10 +101,10 @@ class DroneControl extends MaxObject {
     if( dw > 180.f ) dw -= 360.f 
     if( dw < -180.f ) dw += 360.f 
     if( math.abs(dw) > yawThresh ){
-      var r = rotSpeed //.3f
-      if( dw < 0.f) r = -rotSpeed //.3f
+      var r = -rotSpeed //.3f
+      if( dw < 0.f) r = rotSpeed //.3f
       drone.move(0,0,0,r)
-      return null
+      return
     }
     //println( "diff in yaw: " + dw )
 
@@ -129,7 +127,15 @@ class DroneControl extends MaxObject {
       drone.hover
     }
     //println( dp )
-    null
+  }
+
+  def debug(){
+    post( "ready: " + ready)
+    post("flying: " + flying)
+    post("navigating: " + navigating)
+    post("pos: " + pos.x + " " + pos.y + " " + pos.z + " " + yaw)
+    post("dest: " + dest.x + " " + dest.y + " " + dest.z + " " + destYaw)
+
   }
 
  
