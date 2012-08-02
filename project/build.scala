@@ -8,8 +8,15 @@ object Settings {
   lazy val common = Defaults.defaultSettings ++ Seq (
     version := "0.1",
     scalaVersion := "2.9.1",
-    fork in Compile := true
+    fork in Compile := true,
     //mainClass := Some("Main")
+    resolvers ++= Seq(
+      "Sonatypes's Maven" at "https://oss.sonatype.org/content/repositories/snapshots/",
+      "ScalaNLP Maven2" at "http://repo.scalanlp.org/repo"
+    ),
+    libraryDependencies ++= Seq(
+      "log4j" % "log4j" % "1.2.16"
+    )
    )
 
   lazy val proguard = proguardSettings ++ Seq(

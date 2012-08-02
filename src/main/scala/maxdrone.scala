@@ -91,7 +91,7 @@ class DroneControl extends MaxObject {
 
   def step(x:Float,y:Float,z:Float,w:Float ):Any = {
 
-    if( !flying || !navigating ) return null
+    if( !ready || !flying || !navigating ) return null
 
     val p = Vec3(x,y,z)
     vel = p - pos
