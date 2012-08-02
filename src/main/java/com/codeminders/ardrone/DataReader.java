@@ -120,6 +120,7 @@ public abstract class DataReader implements Runnable {
     {
         done = true;
         selector.wakeup();
+        disconnect();
     }
 	
 }
