@@ -9,22 +9,25 @@
 import com.fishuyo.maths.Vec3
 
 import com.codeminders.ardrone._
-import java.net._
-import de.sciss.osc._
 
 import com.cycling74.max._
-//import MaxSystem._
+import com.cycling74.jitter._
 import MaxObject._
 
-class DroneControl extends MaxObject {
+import java.net._
+import java.awt.image.BufferedImage
+
+class DroneControl extends MaxObject with NavDataListener with DroneVideoListener {
 
   var ip = "192.168.3.1"
   declareAttribute("ip")
 
   private var ready = false
-  private var flying = false
   private var navigating = false
   private var drone : ARDrone = _
+
+  private var frame: BufferedImage = _
+  private var mat: JitterMatrix = _
 
   private var pos = Vec3(0)
   private var vel = Vec3(0)
@@ -32,6 +35,8 @@ class DroneControl extends MaxObject {
 
   private var yaw = 0.f
   private var destYaw = 0.f
+
+  private var nd:NavData = _
   
   var yawThresh = 20.f
   declareAttribute("yawThresh")
@@ -44,6 +49,27 @@ class DroneControl extends MaxObject {
   var rotSpeed = .9f 			//rotation speed default
   declareAttribute("rotSpeed")
 
+  //navdata values
+  var flying = false
+  declareAttribute("flying")
+  var altitude = 0.f
+  declareAttribute("altitude")
+  var battery = 0
+  declareAttribute("battery")
+  var pitch = 0.f
+  declareAttribute("pitch")
+  var roll = 0.f
+  declareAttribute("roll")
+  var yaww = 0.f
+  declareAttribute("yaww")
+  var vx = 0.f
+  declareAttribute("vx")
+  var vy = 0.f
+  declareAttribute("vy")
+  var vz = 0.f
+  declareAttribute("vz")
+  
+
   def connect( ) = {
     try {
       drone = new ARDrone( InetAddress.getByName(ip) )
@@ -54,6 +80,8 @@ class DroneControl extends MaxObject {
       drone.waitForReady(5000)
       post("ARDrone ready!")
       drone.trim
+      drone.addImageListener(this)
+      drone.addNavDataListener(this)
       ready = true
 
     } catch {
@@ -61,7 +89,7 @@ class DroneControl extends MaxObject {
     }
   }
 
-  def disconnect() = { if( !flying ){ drone.disconnect; Thread.sleep(100); drone = null; post("Drone disconnected.")} }
+  def disconnect() = { if( flying ) drone.land; drone.disconnect; Thread.sleep(100); drone = null; post("Drone disconnected.") }
   def clearEmergency() = drone.clearEmergencySignal
   def trim() = drone.trim
   def takeOff() = { drone.takeOff; flying = true}
@@ -138,6 +166,33 @@ class DroneControl extends MaxObject {
 
   }
 
- 
+  def navDataReceived(nd:NavData){
+    flying = nd.isFlying
+    altitude = nd.getAltitude
+    battery = nd.getBattery
+    pitch = nd.getPitch
+    roll = nd.getRoll
+    yaww = nd.getYaw
+    vx = nd.getVx
+    vy = nd.getLongitude
+    vz = nd.getVz
+  }
+
+  def frameReceived(startX:Int, startY:Int, w:Int, h:Int, rgbArray:Array[Int], offset:Int, scansize:Int){
+    if( frame == null ) frame = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB)
+    frame.setRGB(startX, startY, w, h, rgbArray, offset, scansize)
+  }
+
+  override def bang(){
+    if( frame != null ){
+      if( mat == null ) mat = new JitterMatrix
+      mat.copyBufferedImage(frame)
+      outlet(0,"jit_matrix",mat.getName())
+    }else post("no frames from drone received yet.")
+  }
+
+  override def notifyDeleted(){
+    disconnect
+  }
 
 }
