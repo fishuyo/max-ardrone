@@ -136,6 +136,14 @@ public class ARDrone
         this.drone_addr = drone_addr;
     }
 
+    public int queueSize(){
+        return cmd_queue.size();
+    }
+    public void queueClear(){
+        log.info("cleared queue");
+        cmd_queue.clear();
+    }
+
     public void addImageListener(DroneVideoListener l)
     {
         synchronized(image_listeners)
