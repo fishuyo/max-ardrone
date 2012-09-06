@@ -1,4 +1,4 @@
-maxdrone
+maxdrone - DroneControl
 ========
 
 A Max/Msp mxj external for controlling the ARDrone written in scala, uses [JavaDrone](http://code.google.com/p/javadrone/) api
@@ -13,5 +13,6 @@ To build:
 
 To run:
 
+  * build or download [latest build](https://github.com/downloads/fishuyo/max-ardrone/DroneControlv0.3.zip)
   * place built jar into MAXMSP_PATH/Cyclin' 74/java/lib 
   * see DroneControl.maxhelp for usage
