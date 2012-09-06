@@ -13,5 +13,5 @@ To build:
 
 To run:
 
-  * place built jar into <MAXMSP_PATH>/Cyclin' 74/java/lib 
+  * place built jar into MAXMSP_PATH/Cyclin' 74/java/lib 
   * see DroneControl.maxhelp for usage
