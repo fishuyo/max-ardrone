@@ -6,7 +6,7 @@ import ProguardPlugin._
 
 object Settings {
   lazy val common = Defaults.defaultSettings ++ Seq (
-    version := "0.1",
+    version := "0.3",
     scalaVersion := "2.9.1",
     fork in Compile := true,
     //mainClass := Some("Main")
@@ -61,7 +61,7 @@ object Settings {
 
 object droneBuild extends Build {
   val maxdrone = Project (
-    "maxdrone",
+    "DroneControl",
     file("."),
     settings = Settings.common ++ Settings.proguard
   )
