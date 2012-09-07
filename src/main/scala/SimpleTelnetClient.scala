@@ -12,7 +12,7 @@ class SimpleTelnetClient( val ip:String="192.168.1.1", var port:Int=23 ) {
 	val r = new BufferedReader(new InputStreamReader(socket.getInputStream()))
 	val w = new PrintWriter(socket.getOutputStream())
 
-	read
+	//read
 
 	def send( m:String ) = {
 		w.print(m+"\r\n")
