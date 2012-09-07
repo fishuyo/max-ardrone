@@ -6,7 +6,7 @@ import ProguardPlugin._
 
 object Settings {
   lazy val common = Defaults.defaultSettings ++ Seq (
-    version := "0.3",
+    version := "0.3.2",
     scalaVersion := "2.9.1",
     fork in Compile := true,
     //mainClass := Some("Main")
