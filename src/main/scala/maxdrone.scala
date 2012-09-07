@@ -73,6 +73,8 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
   declareAttribute("vz")
 
   var qSize = 0
+
+  post("DroneControl version 0.3.2 initialized.")
   
 
   def connect(){
@@ -80,7 +82,7 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
       post("Drone already connected.")
       return
     }
-    val control = this
+    val _this = this
     val t = new Thread(){
       override def run(){
         try {
@@ -91,13 +93,13 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
           d.waitForReady(3000)
           post("ARDrone connected and ready!")
           d.trim
-          d.addImageListener(control)
-          d.addNavDataListener(control)
+          d.addImageListener(_this)
+          d.addNavDataListener(_this)
           drone = d
           ready = true
 
         } catch {
-          case e: Exception => ouch("Drone connection failed...")//; e.printStackTrace 
+          case e: Exception => post("Drone connection failed."); e.printStackTrace 
         }  
       }
     }
@@ -257,6 +259,7 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
     post("altitude: " + altitude)
     post("pitch roll yaw: " + pitch + " " + roll + " " + yaww)
     post("battery: " + battery)
+    if( drone != null ) qSize = drone.queueSize
     post("command queue size: " + qSize)
   }
 
@@ -270,7 +273,7 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
     vx = nd.getVx
     vy = nd.getLongitude
     vz = nd.getVz
-    qSize = drone.queueSize
+    //qSize = drone.queueSize
   }
 
   def frameReceived(startX:Int, startY:Int, w:Int, h:Int, rgbArray:Array[Int], offset:Int, scansize:Int){
