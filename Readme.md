@@ -13,6 +13,6 @@ To build:
 
 To run:
 
-  * build or download [latest build](https://github.com/downloads/fishuyo/max-ardrone/DroneControlv0.3.zip)
+  * build or download latest build: [ARDrone1.0](https://github.com/downloads/fishuyo/max-ardrone/DroneControlv0.3.zip) or [ARDrone2.0 - no video](https://github.com/downloads/fishuyo/max-ardrone/DroneControlv0.3.2.zip)
   * place built jar into MAXMSP_PATH/Cyclin' 74/java/lib 
   * see DroneControl.maxhelp for usage
