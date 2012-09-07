@@ -293,9 +293,10 @@ public class ARDrone
             nav_data_reader_thread = new Thread(nav_data_reader);
             nav_data_reader_thread.start();
 
-            video_reader = new VideoReader(this, drone_addr, VIDEO_PORT);
-            video_reader_thread = new Thread(video_reader);
-            video_reader_thread.start();
+            video_reader = null;
+            //video_reader = new VideoReader(this, drone_addr, VIDEO_PORT);
+            //video_reader_thread = new Thread(video_reader);
+            //video_reader_thread.start();
 
             changeState(State.CONNECTING);
 
@@ -330,8 +331,8 @@ public class ARDrone
         if(nav_data_reader != null)
             nav_data_reader.stop();
 
-        if(video_reader != null)
-            video_reader.stop();
+        //if(video_reader != null)
+        //    video_reader.stop();
 
         if(cmd_socket != null)
             cmd_socket.close();
@@ -417,7 +418,7 @@ public class ARDrone
     {
         if(nd.isBatteryTooLow() || nd.isNotEnoughPower())
         {
-            log.error("Battery pb " + nd.toString());
+            log.error("Battery low!" + nd.toString());
         }
 
         synchronized(emergency_mutex)
@@ -453,6 +454,9 @@ public class ARDrone
                 {
                     changeState(State.BOOTSTRAP);
                 } else if(state == State.BOOTSTRAP && nd.getMode() == NavData.Mode.DEMO)
+                {
+                    changeState(State.DEMO);
+                } else if(state == State.CONNECTING && nd.getMode() == NavData.Mode.DEMO)
                 {
                     changeState(State.DEMO);
                 }
