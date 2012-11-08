@@ -135,7 +135,7 @@ public class ARDrone
     {
         this.drone_addr = drone_addr;
     }
-
+    
     public int queueSize(){
         return cmd_queue.size();
     }
@@ -294,9 +294,13 @@ public class ARDrone
             nav_data_reader_thread.start();
 
             video_reader = null;
-            //video_reader = new VideoReader(this, drone_addr, VIDEO_PORT);
-            //video_reader_thread = new Thread(video_reader);
-            //video_reader_thread.start();
+            // try {
+            //     video_reader = new VideoReader(this, drone_addr, VIDEO_PORT);
+            //     video_reader_thread = new Thread(video_reader);
+            //     video_reader_thread.start();
+            // } catch( IOException ex ){
+            //     log.error("video thread failed to start.");
+            // }
 
             changeState(State.CONNECTING);
 
@@ -631,8 +635,8 @@ public class ARDrone
                 } else if(state == State.ERROR || state == State.DISCONNECTED)
                 {
                     throw new IOException("Connection Error");
-                }
-
+                } 
+                
                 long p = Math.min(how_long - (System.currentTimeMillis() - since), how_long);
                 if(p > 0)
                 {

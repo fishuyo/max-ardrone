@@ -23,6 +23,7 @@ object Settings {
     proguardOptions := Seq( 
       //"-libraryjars lib/max.jar:lib/jitter.jar",
       "-keep class DroneControl { *; }",
+      "-keep class com.fishuyo.maths.Vec3",
       """-keepclasseswithmembers public class * {
         public static void main(java.lang.String[]);
       }
