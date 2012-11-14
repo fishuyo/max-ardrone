@@ -93,7 +93,7 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
 
   var qSize = 0
 
-  post("DroneControl version 0.3.2")
+  post("DroneControl version 0.3.3")
   
 
   def connect(){
@@ -284,8 +284,8 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
   def step(x:Float,y:Float,z:Float,w:Float ){
     if( home == null ) home = (x,y,z,w)
     if( !ready || !flying || !navigating ) return
-
-    var (lr,fb,ud,r) = (0.f,0.f,0.f,0.f)
+    var tilt = Vec3(0.f)
+    var (ud,r) = (0.f,0.f)
     var hover = useHover
 
     var p = Vec3(x,y,z)
@@ -329,13 +329,13 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
       ud = d.y * vmoveSpeed
 
       //assumes drone oriented 0 degrees looking down negative z axis, positive x axis to its right
-      fb = (d.x*sin + d.z*cos).toFloat * moveSpeed 
-      lr = (d.x*cos - d.z*sin).toFloat * moveSpeed
+      tilt.y = (d.x*sin + d.z*cos).toFloat * moveSpeed //forward backward tilt
+      tilt.x = (d.x*cos - d.z*sin).toFloat * moveSpeed //left right tilt
       if( smooth ) {
-        fb *= dp
-        lr *= dp
+        tilt *= dp
+        if( tilt.x > 1.f || tilt.y > 1.f) tilt = tilt.normalize       
       }
-      drone.move(lr.toFloat,fb.toFloat,ud,0)
+      
     } else if( goingHome && vel.mag < .05f ){
       drone.land
       posThresh = .33f
@@ -346,7 +346,7 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
 
     if(hover) drone.hover
     else if(rotFirst && r != 0.f) drone.move(0,0,0,r)
-    else drone.move(lr,fb,ud,r)
+    else drone.move(tilt.x,tilt.y,ud,r)
     
   }
 
@@ -393,6 +393,7 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
     frame.setRGB(startX, startY, w, h, rgbArray, offset, scansize)
   }
 
+  def connectVideo() = drone.connectVideo();
   override def bang(){
     if( frame != null ){
       if( mat == null ) mat = new JitterMatrix

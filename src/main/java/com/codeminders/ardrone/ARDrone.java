@@ -311,6 +311,18 @@ public class ARDrone
         }
     }
 
+    public void connectVideo() throws IOException{
+        if( video_reader != null ) return;
+        try {
+            video_reader = new VideoReader(this, drone_addr, VIDEO_PORT);
+            video_reader_thread = new Thread(video_reader);
+            video_reader_thread.start();
+        } catch( IOException ex ){
+            log.error("video thread failed to start.");
+            video_reader = null;
+        }
+    }
+
     public void disableAutomaticVideoBitrate() throws IOException
     {
         cmd_queue.add(new ConfigureCommand("video:bitrate_control_mode", "0"));
