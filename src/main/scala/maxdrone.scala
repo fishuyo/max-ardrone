@@ -342,6 +342,7 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
 
     val dir = (dest - (pos+vel))
     val dp = dir.mag
+
     if( dp  > posThresh ){
       hover = false
       val cos = math.cos(estYaw.toRadians)
@@ -371,7 +372,10 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
       smooth = false
       goingHome = false
       return
-    }else nextWaypoint
+    }else{
+      nextWaypoint
+      return
+    }
 
     if(hover) drone.hover
     else if(rotFirst && r != 0.f) drone.move(0,0,0,r)
