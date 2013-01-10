@@ -40,10 +40,14 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
   private var home:(Float,Float,Float,Float) = null
   private var pos = Vec3(0)
   private var vel = Vec3(0)
+  private var accel = Vec3(0)
   private var dest = Vec3(0)
+  private var tilt = Vec3(0.f)
+  private var (ud,r) = (0.f,0.f)
 
   private var yaw = 0.f
   private var destYaw = 0.f
+  private var yawVel = 0.f
   private var lookingAt:Vec3 = null
 
   private var nd:NavData = _
@@ -54,6 +58,8 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
   declareAttribute("yawThresh")
   var posThresh = .33f
   declareAttribute("posThresh")
+  var velThresh = .1f
+  declareAttribute("velThresh")
   var moveSpeed = .1f 			//horizontal movement speed default
   declareAttribute("moveSpeed")
   var vmoveSpeed = .1f 			//vertical movement speed default
@@ -231,13 +237,13 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
 	  //post( "fly: " + flying )
   }
 
-  def move( lr: Float, fb: Float, ud: Float, r: Float ){
+  def move( lr: Float, fb: Float, udv: Float, rv: Float ){
     if( drone == null){
       post("Drone not connected.")
       return
     }
     navigating=false
-    drone.move(lr,fb,ud,r) 
+    drone.move(lr,fb,udv,rv) 
   }
 
   def moveTo( x:Float,y:Float,z:Float,w:Float ){
@@ -278,28 +284,42 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
     smooth = true
     goingHome = true
   }
+  def cancelHome() = {
+    posThresh = .33f
+    smooth = false
+    goingHome = false
+  }
 
   def hover = { navigating=false; drone.hover }
 
   def step(x:Float,y:Float,z:Float,w:Float ){
     if( home == null ) home = (x,y,z,w)
     if( !ready || !flying || !navigating ) return
-    var tilt = Vec3(0.f)
-    var (ud,r) = (0.f,0.f)
+
     var hover = useHover
+    tilt.zero
+    ud = 0.f
+    r = 0.f
 
     var p = Vec3(x,y,z)
-    vel = p - pos
+    var v = p - pos
 
-    if( vel.x == 0.f && vel.y == 0.f && vel.z == 0.f ){
+    if( v.x == 0.f && v.y == 0.f && v.z == 0.f ){
       dropped += 1
       if(dropped > 5){
-        //post("lost tracking!!!") // TODO
+        post("lost tracking!!!") // TODO
       }
     }else dropped = 0
 
-    pos = p; //check this
+    accel = v - vel
+    vel.set( v )
+    pos.set(p)
+
+    var oldYaw = yaw
     yaw = w; while( yaw < -180.f ) yaw += 360.f; while( yaw > 180.f) yaw -= 360.f
+    yawVel = yaw - oldYaw
+    if( yawVel > 180.f) yawVel -= 360.f
+    if( yawVel < -180.f) yawVel += 360.f
 
     //if look always look where it's going
     if(look) destYaw = math.atan2(dest.z - pos.z, dest.x - pos.x).toFloat.toDegrees + 90.f
@@ -307,14 +327,15 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
     while( destYaw < -180.f ) destYaw += 360.f
     while( destYaw > 180.f ) destYaw -= 360.f
 
-    var dw = destYaw - yaw
+    var estYaw = yaw + yawVel
+    var dw = destYaw - estYaw
     if( dw > 180.f ) dw -= 360.f 
     if( dw < -180.f ) dw += 360.f 
     if( math.abs(dw) > yawThresh ){ 
       hover = false
       r = -rotSpeed
       if( dw < 0.f) r = rotSpeed
-      if( smooth ) r *= dw / 180.f
+      if( smooth ) r *= math.abs(dw) / 180.f
       //drone.move(0,0,0,r)
       //return
     }
@@ -323,20 +344,28 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
     val dp = dir.mag
     if( dp  > posThresh ){
       hover = false
-      val cos = math.cos(w.toRadians)
-      val sin = math.sin(w.toRadians)
-      val d = (dest - pos).normalize
+      val cos = math.cos(estYaw.toRadians)
+      val sin = math.sin(estYaw.toRadians)
+      val d = dir.normalize
       ud = d.y * vmoveSpeed
 
       //assumes drone oriented 0 degrees looking down negative z axis, positive x axis to its right
       tilt.y = (d.x*sin + d.z*cos).toFloat * moveSpeed //forward backward tilt
       tilt.x = (d.x*cos - d.z*sin).toFloat * moveSpeed //left right tilt
-      if( smooth ) {
+      if( smooth && dp < 1.f ){
         tilt *= dp
-        if( tilt.x > 1.f || tilt.y > 1.f) tilt = tilt.normalize       
-      }
+        ud *= dp
+      }         
       
-    } else if( goingHome && vel.mag < .05f ){
+    } else if( vel.mag > velThresh){
+      hover = false
+      val cos = math.cos(estYaw.toRadians)
+      val sin = math.sin(estYaw.toRadians)
+      ud = -vel.y
+      tilt.y = (-vel.x*sin - vel.z*cos).toFloat //forward backward tilt
+      tilt.x = (-vel.x*cos + vel.z*sin).toFloat //left right tilt
+
+    }else if( goingHome && vel.mag < .05f ){
       drone.land
       posThresh = .33f
       smooth = false
@@ -366,10 +395,12 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
     post("navigating: " + navigating)
     post("pos: " + pos.x + " " + pos.y + " " + pos.z + " " + yaw)
     post("dest: " + dest.x + " " + dest.y + " " + dest.z + " " + destYaw)
-    post("tracked vel: " + vel.x + " " + vel.y + " " + vel.z)
+    post("tracked vel: " + vel.x + " " + vel.y + " " + vel.z + " " + yawVel)
+    post("tracked accel: " + accel.x + " " + accel.y + " " + accel.z)
     post("internal vel: " + vx + " " + vy + " " + vz)
-    post("altitude: " + altitude)
+    post("move: " + tilt.x + " " + tilt.y + " " + ud + " " + r)
     post("pitch roll yaw: " + pitch + " " + roll + " " + yaww)
+    post("altitude: " + altitude)
     post("battery: " + battery)
     if( drone != null ) qSize = drone.queueSize
     post("command queue size: " + qSize)

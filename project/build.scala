@@ -11,8 +11,7 @@ object Settings {
     fork in Compile := true,
     //mainClass := Some("Main")
     resolvers ++= Seq(
-      "Sonatypes's Maven" at "https://oss.sonatype.org/content/repositories/snapshots/",
-      "ScalaNLP Maven2" at "http://repo.scalanlp.org/repo"
+      "Sonatypes's Maven" at "https://oss.sonatype.org/content/repositories/snapshots/"
     ),
     libraryDependencies ++= Seq(
       "log4j" % "log4j" % "1.2.16"
