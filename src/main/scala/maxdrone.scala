@@ -114,7 +114,7 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
     val t = new Thread(){
       override def run(){
         try {
-          val d = new ARDrone( InetAddress.getByName(ip) )
+          val d = new ARDrone( InetAddress.getByName(ip), 1000, 1000 )
          	post("connecting to ARDrone at " + ip + " ..." )
           d.connect
           d.clearEmergencySignal
@@ -306,9 +306,10 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
 
     if( v.x == 0.f && v.y == 0.f && v.z == 0.f ){
       dropped += 1
-      if(dropped > 5){
+      
+      //if(dropped > 5){
         post("lost tracking!!!") // TODO
-      }
+      //}
     }else dropped = 0
 
     accel = v - vel
@@ -343,6 +344,8 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
     val dir = (dest - (pos+vel))
     val dp = dir.mag
 
+    def scurve = (f:Float) =>{ 1.f/ (1.f+math.pow(math.E,f))}
+
     if( dp  > posThresh ){
       hover = false
       val cos = math.cos(estYaw.toRadians)
@@ -354,7 +357,7 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
       tilt.y = (d.x*sin + d.z*cos).toFloat * moveSpeed //forward backward tilt
       tilt.x = (d.x*cos - d.z*sin).toFloat * moveSpeed //left right tilt
       if( smooth && dp < 1.f ){
-        tilt *= dp
+        tilt *= scurve(dp).toFloat
         ud *= dp
       }         
       
@@ -393,6 +396,21 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
     Logger.getRootLogger.setLevel( v )
   }
 
+  def getVersion(){ post("version: " + drone.getDroneVersion() )}
+
+  def setConfigOption(name:String,value:String){
+    drone.setConfigOption(name,value)
+  }
+  def setMaxEuler(v:Float){
+    setConfigOption("control:euler_angle_max",v.toString)
+  }
+  def setMaxVertical(v:Float){
+    setConfigOption("control:control_vz_max",v.toString)
+  } 
+  def setMaxRotation(v:Float){
+    setConfigOption("control:control_yaw",v.toString)
+  }
+
   def debug(){
     post( "ready: " + ready)
     post("flying: " + flying)
@@ -406,7 +424,7 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
     post("pitch roll yaw: " + pitch + " " + roll + " " + yaww)
     post("altitude: " + altitude)
     post("battery: " + battery)
-    if( drone != null ) qSize = drone.queueSize
+    //if( drone != null ) qSize = drone.queueSize
     post("command queue size: " + qSize)
   }
 
@@ -428,7 +446,7 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
     frame.setRGB(startX, startY, w, h, rgbArray, offset, scansize)
   }
 
-  def connectVideo() = drone.connectVideo();
+  //def connectVideo() = drone.connectVideo();
   override def bang(){
     if( frame != null ){
       if( mat == null ) mat = new JitterMatrix
@@ -436,7 +454,6 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
       outlet(0,"jit_matrix",mat.getName())
     }else post("no frames from drone received yet.")
   }
-
   override def notifyDeleted(){
     disconnect
   }
