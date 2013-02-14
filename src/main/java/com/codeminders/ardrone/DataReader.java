@@ -41,7 +41,7 @@ public abstract class DataReader implements Runnable {
         
         channel = DatagramChannel.open();
         channel.configureBlocking(false);
-        channel.socket().bind(new InetSocketAddress(data_port));
+        //channel.socket().bind(new InetSocketAddress(data_port)); // commented out to allow multiple drones to connect
         channel.connect(new InetSocketAddress(drone_addr, data_port));
 
         selector = Selector.open();
