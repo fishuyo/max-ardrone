@@ -4,7 +4,7 @@ package maths
 
 object Vec3 {
 
-  def apply( v: Float) = new Vec3( v, v, v)
+  def apply( v: Float=0.f) = new Vec3( v, v, v)
   def apply( vv: Double) = { val v=vv.toFloat; new Vec3( v, v, v) }
   def apply( x: Float, y: Float, z: Float) = new Vec3(x,y,z)
   def apply( x: Double, y: Double, z: Double) =  new Vec3(x.toFloat,y.toFloat,z.toFloat) 
@@ -13,7 +13,11 @@ object Vec3 {
 }
 
 class Vec3( var x: Float, var y: Float, var z: Float ){
+  def apply(i:Int) = i match { case 0 => x; case 1 => y; case 2 => z;}
+  def update(i:Int,v:Float) = i match { case 0 => x=v; case 1 => y=v; case 2 => z=v;}
   def set(v:Vec3) = { x=v.x; y=v.y; z=v.z }
+  def set(v:Float) = { x=v; y=v; z=v }
+  def set(v:(Float,Float,Float)) = { x=v._1; y=v._2; z=v._3 }
   def +(v: Vec3) = Vec3( x+v.x, y+v.y, z+v.z )
   def +=(v: Vec3) = { x+=v.x; y+=v.y; z+=v.z }
   def -(v: Vec3) = {Vec3( x-v.x, y-v.y, z-v.z )}
