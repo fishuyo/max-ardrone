@@ -29,6 +29,7 @@ import com.codeminders.ardrone.data.ARDroneDataReader;
 import com.codeminders.ardrone.data.ChannelProcessor;
 import com.codeminders.ardrone.data.decoder.ardrone10.ARDrone10NavDataDecoder;
 import com.codeminders.ardrone.data.decoder.ardrone10.ARDrone10VideoDataDecoder;
+//import com.codeminders.ardrone.data.decoder.ardrone20.ARDrone20VideoDataDecoder;
 import com.codeminders.ardrone.data.logger.ARDroneDataReaderAndLogWrapper;
 import com.codeminders.ardrone.data.logger.DataLogger;
 import com.codeminders.ardrone.data.navdata.FlyingState;
@@ -165,6 +166,7 @@ public class ARDrone
     private NavDataDecoder                  ext_nav_data_decoder;
     
     private DroneVersionReader              versionReader;
+    private int                             versionNum;
 
     public ARDrone() throws UnknownHostException
     {
@@ -331,6 +333,7 @@ public class ARDrone
             } catch (NumberFormatException e) {
                 log.log(Level.SEVERE, "Failed to discover drone version. Using configuration for drone version: " + version, e);
             }
+            versionNum = version;
             
             cmd_socket = new DatagramSocket();
 
@@ -381,7 +384,7 @@ public class ARDrone
             case 1:
                 return   new ARDrone10VideoDataDecoder(this, VIDEO_BUFFER_SIZE);
             case 2:
-                 return null; // no decoder implemented yet
+                return   null;//new ARDrone20VideoDataDecoder(this, VIDEO_BUFFER_SIZE); //null; // no decoder implemented yet
             default:
                 return   new ARDrone10VideoDataDecoder(this, VIDEO_BUFFER_SIZE);
         }
@@ -585,8 +588,8 @@ public class ARDrone
 
     public void playAnimation(int animation_no, int duration) throws IOException
     {
-        //cmd_queue.add(new PlayAnimationCommand(animation_no, duration));
-        cmd_queue.add(new ConfigureCommand("control:flight_anim", animation_no + "," + duration));
+        if( versionNum == 1) cmd_queue.add(new PlayAnimationCommand(animation_no, duration));
+        else cmd_queue.add(new ConfigureCommand("control:flight_anim", animation_no + "," + duration));
     }
 
     public void playAnimation(Animation animation, int duration) throws IOException

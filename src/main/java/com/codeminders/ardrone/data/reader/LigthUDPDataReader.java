@@ -39,7 +39,7 @@ public class LigthUDPDataReader implements ARDroneDataReader {
 
     public void connect() throws IOException {
         disconnect();
-        socket = new DatagramSocket(data_port);
+        socket = new DatagramSocket(); //data_port);
         socket.setSoTimeout(timeout);
     }
 
