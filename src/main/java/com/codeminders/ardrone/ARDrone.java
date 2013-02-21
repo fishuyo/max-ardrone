@@ -30,6 +30,7 @@ import com.codeminders.ardrone.data.ChannelProcessor;
 import com.codeminders.ardrone.data.decoder.ardrone10.ARDrone10NavDataDecoder;
 import com.codeminders.ardrone.data.decoder.ardrone10.ARDrone10VideoDataDecoder;
 //import com.codeminders.ardrone.data.decoder.ardrone20.ARDrone20VideoDataDecoder;
+import com.codeminders.ardrone.decoder.TestH264DataDecoder;
 import com.codeminders.ardrone.data.logger.ARDroneDataReaderAndLogWrapper;
 import com.codeminders.ardrone.data.logger.DataLogger;
 import com.codeminders.ardrone.data.navdata.FlyingState;
@@ -384,7 +385,7 @@ public class ARDrone
             case 1:
                 return   new ARDrone10VideoDataDecoder(this, VIDEO_BUFFER_SIZE);
             case 2:
-                return   null;//new ARDrone20VideoDataDecoder(this, VIDEO_BUFFER_SIZE); //null; // no decoder implemented yet
+                return   new TestH264DataDecoder(this); //new ARDrone20VideoDataDecoder(this, VIDEO_BUFFER_SIZE); //null; // no decoder implemented yet
             default:
                 return   new ARDrone10VideoDataDecoder(this, VIDEO_BUFFER_SIZE);
         }
