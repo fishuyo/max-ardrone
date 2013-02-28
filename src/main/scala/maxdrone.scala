@@ -107,6 +107,8 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
   declareAttribute("patrol")
   var switchRot = true
   declareAttribute("switchRot")
+  var emergency = false
+  declareAttribute("emergency")
 
   //navdata values
   var altitude = 0.f
@@ -588,6 +590,7 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
     accelerometer.x = nd.getVx
     accelerometer.y = nd.getLongitude
     accelerometer.z = nd.getVz
+    emergency = drone.isEmergencyMode()
     //qSize = drone.queueSize
   }
 
