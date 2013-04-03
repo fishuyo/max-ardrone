@@ -4,10 +4,42 @@ import Keys._
 
 import ProguardPlugin._
 
+
 object Settings {
+  
   lazy val common = Defaults.defaultSettings ++ Seq (
-    version := "0.3.3",
-    scalaVersion := "2.9.1",
+    version := "0.4.1",
+    scalaVersion := "2.9.2",
+    resolvers ++= Seq(
+      "NativeLibs4Java Repository" at "http://nativelibs4java.sourceforge.net/maven/",
+      "xuggle repo" at "http://xuggle.googlecode.com/svn/trunk/repo/share/java/",
+      "Sonatypes OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/",
+      "ScalaNLP Maven2" at "http://repo.scalanlp.org/repo"
+    ),
+    libraryDependencies ++= Seq(
+      //"org.scala-lang" % "scala-compiler" % "2.9.1",
+      "com.nativelibs4java" % "scalacl" % "0.2",
+      "de.sciss" %% "scalaosc" % "1.1.+"
+      //"com.nativelibs4java" % "javacl" % "1.0.0-RC2",
+      //"xuggle" % "xuggle-xuggler" % "5.4"
+      //"org.scalala" % "scalala_2.9.0" % "1.0.0.RC2-SNAPSHOT",
+      //"net.sf.bluecove" % "bluecove" % "2.1.0",
+      //"net.sf.bluecove" % "bluecove-gpl" % "2.1.0"
+    ),
+    autoCompilerPlugins := true,
+    addCompilerPlugin("com.nativelibs4java" % "scalacl-compiler-plugin" % "0.2"),
+    scalacOptions += "-Xexperimental"
+    //sourceDirectories in Compile += new File("common/src"),
+    //fork in Compile := true
+   )
+
+  lazy val desktop = Settings.common ++ Seq (
+    fork in Compile := true
+  )
+
+  lazy val maxmsp = Defaults.defaultSettings ++ Seq (
+    version := "0.4.1",
+    scalaVersion := "2.9.2",
     fork in Compile := true,
     //mainClass := Some("Main")
     resolvers ++= Seq(
@@ -16,7 +48,7 @@ object Settings {
     libraryDependencies ++= Seq(
       "log4j" % "log4j" % "1.2.16"
     )
-   )
+  )
 
   lazy val proguard = proguardSettings ++ Seq(
     proguardOptions := Seq( 
@@ -59,10 +91,24 @@ object Settings {
   )
 }
 
+
+
 object droneBuild extends Build {
-  val maxdrone = Project (
-    "DroneControl",
-    file("."),
-    settings = Settings.common ++ Settings.proguard
+    val all_common = Project (
+    "common",
+    file("./common"),
+    settings = Settings.common
   )
+
+  lazy val desktop = Project (
+    "desktop",
+    file("./desktop"),
+    settings = Settings.desktop
+  ) dependsOn all_common
+
+  val maxdrone = Project (
+    "maxmsp",
+    file("./maxmsp"),
+    settings = Settings.maxmsp ++ Settings.proguard
+  ) dependsOn all_common
 }
