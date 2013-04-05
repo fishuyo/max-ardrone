@@ -44,7 +44,7 @@ Pad.bind( lambda{|i,f|
 	if i == 2
 		mx = mx + f[2]*0.05
 		my = my + f[3]*-0.05
-		drone.moveTo(mx,0.0,my,0.0)
+		#drone.moveTo(mx,0.0,my,0.0)
 		#drone.moveTo(2.0*f[0],1.0,-2.0*f[1],0.0)
 	end
 })

@@ -9,6 +9,7 @@ package com.fishuyo
 package drone
 
 import maths.Vec3
+import maths.Quat
 import spatial.Pose
 import net.SimpleTelnetClient
 
@@ -35,6 +36,8 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
   var homePose = Pose()
 
   var dropped = 0
+  private var lookingAt:Vec3 = null
+  var waypoints = new Queue[(Float,Float,Float,Float)]
 
   //state for controller v1 (DroneControlv0 - v0.3)
 	var dest = Vec3()
@@ -63,7 +66,6 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
 
   // controller params
   var maxEuler = .6f  //(0 - .52 rad)
-  def setMaxEuler(f:Float) = maxEuler = f
   var maxVert = 1000   //(200-2000 mm/s)
   var maxRot = 3.0f    //(.7 - 6.11 rad/s)
   var posThresh = .1f; var yawThresh = 10.f
@@ -71,8 +73,8 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
   def setMoveSpeed(f:Float) = moveSpeed = f
 	var vmoveSpeed = 1.f
 	var rotSpeed = 1.f
-	var smooth = false)
-  var rotFirst = false)
+	var smooth = false
+  var rotFirst = false
   var look = false
   var useHover = true
   var patrol = false
@@ -242,15 +244,15 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
   }
 
   // debug stuff
-  def logger( l:String="INFO" ){
-    var v = Level.INFO
-    l.toUpperCase match {
-      case "WARN" => v = Level.WARN
-      case "DEBUG" => v = Level.DEBUG
-      case _ => v = Level.INFO
-    }
-    Logger.getRootLogger.setLevel( v )
-  }
+  // def logger( l:String="INFO" ){
+  //   var v = Level.INFO
+  //   l.toUpperCase match {
+  //     case "WARN" => v = Level.WARN
+  //     case "DEBUG" => v = Level.DEBUG
+  //     case _ => v = Level.INFO
+  //   }
+  //   Logger.getRootLogger.setLevel( v )
+  // }
 
   def getVersion(){ println("version: " + drone.getDroneVersion() )}
 
@@ -258,13 +260,13 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
     println( "ready: " + ready)
     println("flying: " + flying)
     println("navigating: " + navigating)
-    println("pos: " + pos.x + " " + pos.y + " " + pos.z + " " + yaw)
+    println("pos: " + tPos.x + " " + tPos.y + " " + tPos.z + " " + tYaw)
     println("dest: " + dest.x + " " + dest.y + " " + dest.z + " " + destYaw)
-    println("tracked vel: " + vel.x + " " + vel.y + " " + vel.z + " " + yawVel)
-    println("tracked accel: " + accel.x + " " + accel.y + " " + accel.z)
-    println("internal vel: " + vx + " " + vy + " " + vz)
-    println("move: " + tilt.x + " " + tilt.y + " " + ud + " " + r)
-    println("pitch roll yaw: " + pitch + " " + roll + " " + yaww)
+    println("tracked vel: " + tVel.x + " " + tVel.y + " " + tVel.z )
+    println("tracked accel: " + tAcc.x + " " + tAcc.y + " " + tAcc.z)
+    //println("internal vel: " + vx + " " + vy + " " + vz)
+    //println("move: " + tilt.x + " " + tilt.y + " " + ud + " " + r)
+    //println("pitch roll yaw: " + pitch + " " + roll + " " + yaww)
     println("altitude: " + altitude)
     println("battery: " + battery)
     //if( drone != null ) qSize = drone.queueSize
@@ -279,9 +281,9 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
     gyroAngles.x = nd.getPitch
     gyroAngles.z = nd.getRoll
     gyroAngles.y = nd.getYaw
-    accelerometer.x = nd.getVx
-    accelerometer.y = nd.getLongitude
-    accelerometer.z = nd.getVz
+    estimatedVelocity.x = nd.getVx
+    estimatedVelocity.y = nd.getLongitude
+    estimatedVelocity.z = nd.getVz
     emergency = drone.isEmergencyMode()
     //qSize = drone.queueSize
   }
@@ -491,7 +493,7 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
     var p = Vec3(x,y,z)
     tVel = p - tPos
 
-    if( vel.x == 0.f && vel.y == 0.f && vel.z == 0.f ){
+    if( tVel.x == 0.f && tVel.y == 0.f && tVel.z == 0.f ){
       dropped += 1
       if(dropped > 5){
         println("lost tracking or step size too short!!!") // TODO
@@ -504,8 +506,8 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
     tYaw = w; while( tYaw < -180.f ) tYaw += 360.f; while( tYaw > 180.f) tYaw -= 360.f
 
     //if look always look where it's going
-    if(look) destYaw = math.atan2(dest.pos.z - pos.z, dest.pos.x - tPos.x).toFloat.toDegrees + 90.f
-    else if( lookingAt != null ) destYaw = math.atan2(lookingAt.z - tPos.z, lookingAt.x - tPos.x).toFloat.toDegrees + 90.f
+    //if(look) destYaw = math.atan2(dest.pos.z - pos.z, dest.pos.x - tPos.x).toFloat.toDegrees + 90.f
+    //else if( lookingAt != null ) destYaw = math.atan2(lookingAt.z - tPos.z, lookingAt.x - tPos.x).toFloat.toDegrees + 90.f
     
     while( destYaw < -180.f ) destYaw += 360.f
     while( destYaw > 180.f ) destYaw -= 360.f

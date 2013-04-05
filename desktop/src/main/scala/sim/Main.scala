@@ -8,7 +8,8 @@ import spatial._
 import io._
 import dynamic._
 import audio._
-import drone._
+
+import com.fishuyo.SimpleAppRun
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.InputAdapter
@@ -26,7 +27,7 @@ object Main extends App{
   GLScene.push(ground)
 
 
-  val live = new Ruby("src/main/scala/drone/live.rb")
+  val live = new Ruby("src/main/scala/sim/live.rb")
 
   Trackpad.connect()
 

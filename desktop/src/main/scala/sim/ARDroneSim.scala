@@ -36,7 +36,7 @@ class ARDroneSim extends ARDrone with GLAnimatable {
   var body = GLPrimitive.cube(Pose(), Vec3(0.5f,.05f,.5f))
 
   // simulation state -- represents the exact position velocity and acceleration for a given time
-  var sPose = Vec3()
+  var sPose = Pose()
 	var sVelocity = Vec3()
 	var sAcceleration = Vec3()
 	var thrust = 0.f
@@ -112,7 +112,7 @@ class ARDroneSim extends ARDrone with GLAnimatable {
 		takingOff = true
 	}
 	override def land() = { flying = false; takingOff=false; thrust = 5.f}
-	override def hover() = { drone.p.quat.setIdentity(); velocity.set(0,0,0)}
+	override def hover() = { sPose.quat.setIdentity(); sVelocity.set(0,0,0)}
 
 	
 }
