@@ -87,7 +87,7 @@ class ARDroneSim extends ARDrone with GLAnimatable {
 			//vel.set(0.f,0.f,0.f)
 		}
 
-		body.p = sPose
+		body.pose = sPose
 
     // plot(sAcceleration.x)
     // plot2(expected_a.x)
@@ -112,7 +112,7 @@ class ARDroneSim extends ARDrone with GLAnimatable {
 		takingOff = true
 	}
 	override def land() = { flying = false; takingOff=false; thrust = 5.f}
-	override def hover() = { sPose.quat.setIdentity(); sVelocity.set(0,0,0)}
+	override def hover() = { sPose.quat.setIdentity(); val r = util.Randf(-0.1f,.1f); sVelocity.set(r(),r(),r())}
 
 	
 }

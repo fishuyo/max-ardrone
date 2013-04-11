@@ -160,6 +160,7 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
       return
     }
     drone.takeOff
+    flying = true
   }
 
   def land(){
@@ -168,6 +169,7 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
       return
     }
     drone.land
+    flying = false
   }
 
   def toggleFly = {
@@ -388,9 +390,10 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
   ////////////////////////////////////////////////////////////////////////////
   // STEP 2.0
   ////////////////////////////////////////////////////////////////////////////
-  def step2(x:Float,y:Float,z:Float,qx:Float,qy:Float,qz:Float,qw:Float){
+  def step2(x:Float,y:Float,z:Float,qx:Float,qy:Float,qz:Float,qw:Float){ step2( Pose(Vec3(x,y,z),Quat(qw,qx,qy,qz))) }
+  def step2(p:Pose){
 
-    if( !flying || !navigating ){ } //navmove(0.f,0.f,0.f,0.f); return }
+    if( !flying || !navigating ){ return } //navmove(0.f,0.f,0.f,0.f); return }
 
     // calculate time since last step
     val t1 = System.currentTimeMillis()
@@ -399,7 +402,7 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
     //println("dt: "+dt)
 
     // current pose and velocity
-    val p = Pose(Vec3(x,y,z),Quat(qw,qx,qy,qz))
+    //val p = Pose(Vec3(x,y,z),Quat(qw,qx,qy,qz))
     val v = (p.pos - tPose.pos) / dt
 
     // update tracked state

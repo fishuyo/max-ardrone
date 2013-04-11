@@ -94,21 +94,21 @@ object Settings {
 
 
 object droneBuild extends Build {
-    val all_common = Project (
+    val common = Project (
     "common",
     file("./common"),
     settings = Settings.common
   )
 
-  lazy val desktop = Project (
+  lazy val a_desktop = Project (
     "desktop",
     file("./desktop"),
     settings = Settings.desktop
-  ) dependsOn all_common
+  ) dependsOn common
 
   val maxdrone = Project (
     "maxmsp",
     file("./maxmsp"),
     settings = Settings.maxmsp ++ Settings.proguard
-  ) dependsOn all_common
+  ) dependsOn common
 }
