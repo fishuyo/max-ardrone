@@ -19,15 +19,10 @@ $simDrone = $Main.simDrone
 
 ######## Drone Control Config #########
 
-#$simControl.moveTo(1.0,1.0,1.0,0.0)
 #$simControl.setMoveSpeed(5.0)
 #$simControl.setMaxEuler(0.6)
-#Seer.graphics.Shader[1]
-
-
 
 ########### Keyboard input #############
-graphs = true
 x=0
 z=0
 y=0
@@ -35,7 +30,7 @@ r=0
 
 Key.clear()
 Key.use()
-Key.bind("p", lambda{ $simControl.toggleFly() })
+Key.bind("f", lambda{ $simControl.toggleFly() })
 
 Key.bind("j", lambda{ x=-0.7; $simControl.move(x,z,y,r) })
 Key.bind("l", lambda{ x=0.7; $simControl.move(x,z,y,r) })
@@ -66,12 +61,10 @@ Pad.bind( lambda{|i,f|           # i -> number of fingers detected
 		mx = mx + f[2]*0.05
 		mz = mz + f[3]*-0.05
 		$simControl.moveTo(mx,my,mz,0.0)
-		#$simControl.moveTo(2.0*f[0],1.0,-2.0*f[1],0.0)
 	elsif i == 3					
 		mx = mx + f[2]*0.05
 		my = my + f[3]*0.05
 		$simControl.moveTo(mx,my,mz,0.0)
-		#$simControl.moveTo(2.0*f[0],1.0,-2.0*f[1],0.0)
 	end
 	if mx > 6.0 then mx = 6.0
 	elsif mx < -6.0 then mx = -6.0 end
@@ -86,11 +79,15 @@ Pad.bind( lambda{|i,f|           # i -> number of fingers detected
 
 def step(dt)
 
+	# New step function
 	#$simControl.step2( $simDrone.sPose )
+
+	# DroneControl v0.4 step function
 	pos = $simDrone.sPose.pos
 	$simControl.step( pos.x,pos.y,pos.z,0.0 )
 	
 
+	# update plot data
 	$Main.plots[0].apply($simDrone.sAcceleration.x)
 	$Main.plots[1].apply($simControl.expected_a.x)
 	$Main.plots[2].apply($simDrone.sVelocity.x)
@@ -98,6 +95,7 @@ def step(dt)
 
 	$Main.traces[0].apply($simDrone.sPose.pos)
 
+	# have plots follow camera
 	if $Main.plotsFollowCam
 		i=0
 		$Main.plots.foreach do |p|

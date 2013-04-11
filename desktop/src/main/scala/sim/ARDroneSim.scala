@@ -111,7 +111,7 @@ class ARDroneSim extends ARDrone with GLAnimatable {
 		flying = true
 		takingOff = true
 	}
-	override def land() = { flying = false; takingOff=false; thrust = 5.f}
+	override def land() = { sPose.quat.setIdentity(); flying = false; takingOff=false; thrust = 5.f}
 	override def hover() = { sPose.quat.setIdentity(); val r = util.Randf(-0.1f,.1f); sVelocity.set(r(),r(),r())}
 
 	
