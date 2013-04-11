@@ -390,7 +390,8 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
   ////////////////////////////////////////////////////////////////////////////
   // STEP 2.0
   ////////////////////////////////////////////////////////////////////////////
-  def step2(x:Float,y:Float,z:Float,qx:Float,qy:Float,qz:Float,qw:Float){ step2( Pose(Vec3(x,y,z),Quat(qw,qx,qy,qz))) }
+  def step2(x:Float,y:Float,z:Float,qx:Float,qy:Float,qz:Float,qw:Float) = step2( Pose(Vec3(x,y,z),Quat(qw,qx,qy,qz)))
+
   def step2(p:Pose){
 
     if( !flying || !navigating ){ return } //navmove(0.f,0.f,0.f,0.f); return }
@@ -412,6 +413,7 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
     tVel2.set(v)
     tPose.set(p)
 
+    // get euler angles from quaternion
     val e = Vec3()
     e.set( tPose.quat.toEuler )
     angVel = (e - euler) / dt
@@ -442,26 +444,34 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
           println( "new trajectory!!!!!!!!!!!! " + i + " " + times._1 + " " + times._2 )
           t(i) += dt
         }else{
+
+          // calculate desired acceleration value based on the differences of expected vs actual positions, velocities, and accelerations
           val d = dcurve(time1(i),time2(i),neg(i))(t(i))
           val dd = vcurve(time1(i),time2(i),neg(i))(t(i))
           expected_v(i) = dd
           val ddd = acurve(time1(i),time2(i),neg(i))(t(i))
-          //println( ddd )
+
+          // desiredAccel = k1 * ∆pos + k2 * ∆vel + k3 * ∆accel
           expected_a(i) = kp(i)*((d+d0(i))-tPose.pos(i)) + kd(i)*(dd-v(i)) + kdd(i)*(ddd-a(i))
           t(i) += dt
 
+          // if time greater than calculated trajectory clear trajectory
           if(t(i) > (time2(i) + time1(i))){
             t(i) = 0.f
             expected_a(i) = 0.f
-            navigating = false
+            //navigating = false
             //move(0.f,0.f,0.f,0.f)
             //this.hover()
           }
         }
 
       }
+
+      // cos(yaw) / sin(yaw)
       val cos = math.cos(euler.y).toFloat
       val sin = math.sin(euler.y).toFloat
+
+      // calculate desired euler angles for desired accelerations
       control.x = math.atan((expected_a.x*cos - expected_a.z*sin) / (expected_a.y+9.8f)).toFloat
       control.y = math.atan((expected_a.x*sin + expected_a.z*cos) / (expected_a.y+9.8f)).toFloat
       control.z = expected_a.y * vmoveSpeed; //expected_a.y
@@ -478,6 +488,7 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
       if( rot > 1.f) rot = 1.f
       else if( rot < -1.f) rot = -1.f
 
+      // send move command to drone
       drone.move(control.x,control.y,control.z,rot)
     } 
   }
@@ -488,6 +499,7 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
 	def step(x:Float,y:Float,z:Float,w:Float ){
     if( homePose == null ) homePose = Pose(Vec3(x,y,z),Quat())
     if( !flying || !navigating ) return
+
     var tilt = Vec3(0.f)
     var (ud,r) = (0.f,0.f)
     var hover = useHover
@@ -505,7 +517,7 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
       }
     }else dropped = 0
 
-    tPos.set(p) //check this
+    tPos.set(p)
     tYaw = w; while( tYaw < -180.f ) tYaw += 360.f; while( tYaw > 180.f) tYaw -= 360.f
 
     //if look always look where it's going
@@ -517,7 +529,8 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
 
     var dw = destYaw - tYaw
     if( dw > 180.f ) dw -= 360.f 
-    if( dw < -180.f ) dw += 360.f 
+    if( dw < -180.f ) dw += 360.f
+     
     if( math.abs(dw) > yawThresh ){ 
       hover = false
       if( !switchRot ) r = -rotSpeed else r = rotSpeed

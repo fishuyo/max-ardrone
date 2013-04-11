@@ -12,11 +12,6 @@ $Main = $Seer.drone.sim.Main
 $simControl = $Main.simControl
 $simDrone = $Main.simDrone
 
-###
-#simDrone.sPose.pos.set(0,0,0)
-#simDrone.sVelocity.set(0,0,0)
-#simDrone.sAcceleration.set(0,0,0)
-
 ######## Drone Control Config #########
 
 #$simControl.setMoveSpeed(5.0)
