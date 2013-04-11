@@ -1,0 +1,120 @@
+require 'java'
+
+#### Globals / package variables ####
+
+$Seer = Java::com.fishuyo
+$Vec3 = $Seer.maths.Vec3
+$Camera = $Seer.graphics.Camera
+Key = $Seer.io.Keyboard
+Pad = $Seer.io.Trackpad
+
+$Main = $Seer.drone.sim.Main
+$simControl = $Main.simControl
+$simDrone = $Main.simDrone
+
+###
+#simDrone.sPose.pos.set(0,0,0)
+#simDrone.sVelocity.set(0,0,0)
+#simDrone.sAcceleration.set(0,0,0)
+
+######## Drone Control Config #########
+
+#$simControl.moveTo(1.0,1.0,1.0,0.0)
+#$simControl.setMoveSpeed(5.0)
+#$simControl.setMaxEuler(0.6)
+#Seer.graphics.Shader[1]
+
+
+
+########### Keyboard input #############
+graphs = true
+x=0
+z=0
+y=0
+r=0
+
+Key.clear()
+Key.use()
+Key.bind("p", lambda{ $simControl.toggleFly() })
+
+Key.bind("j", lambda{ x=-0.7; $simControl.move(x,z,y,r) })
+Key.bind("l", lambda{ x=0.7; $simControl.move(x,z,y,r) })
+Key.bind("i", lambda{ z=-0.7; $simControl.move(x,z,y,r) })
+Key.bind("k", lambda{ z=0.7; $simControl.move(x,z,y,r) })
+Key.bind("y", lambda{ y=5.0; $simControl.move(x,z,y,r) })
+Key.bind("h", lambda{ y=-5.0; $simControl.move(x,z,y,r) })
+
+Key.bindUp("j", lambda{ x=0.0; $simControl.move(x,z,y,r) })
+Key.bindUp("l", lambda{ x=0.0; $simControl.move(x,z,y,r) })
+Key.bindUp("i", lambda{ z=0.0; $simControl.move(x,z,y,r) })
+Key.bindUp("k", lambda{ z=0.0; $simControl.move(x,z,y,r) })
+Key.bindUp("y", lambda{ y=0.0; $simControl.move(x,z,y,r) })
+Key.bindUp("h", lambda{ y=0.0; $simControl.move(x,z,y,r) })
+
+Key.bind("g", lambda{ $Main.togglePlotFollow() })
+
+
+######## Trackpad gesture input #########
+
+mx=0.0
+my=0.0
+mz=0.0
+Pad.clear()
+Pad.connect()
+Pad.bind( lambda{|i,f|           # i -> number of fingers detected
+	if i == 2					 # f -> array of (x,y,dx,dy)
+		mx = mx + f[2]*0.05
+		mz = mz + f[3]*-0.05
+		$simControl.moveTo(mx,my,mz,0.0)
+		#$simControl.moveTo(2.0*f[0],1.0,-2.0*f[1],0.0)
+	elsif i == 3					
+		mx = mx + f[2]*0.05
+		my = my + f[3]*0.05
+		$simControl.moveTo(mx,my,mz,0.0)
+		#$simControl.moveTo(2.0*f[0],1.0,-2.0*f[1],0.0)
+	end
+	if mx > 6.0 then mx = 6.0
+	elsif mx < -6.0 then mx = -6.0 end
+	if my > 6.0 then my = 6.0
+	elsif my < 0.0 then my = 0.0 end
+	if mz > 6.0 then mz = 6.0
+	elsif mz < -6.0 then mz = -6.0 end
+})
+
+
+######## Step function called each frame #######
+
+def step(dt)
+
+	#$simControl.step2( $simDrone.sPose )
+	pos = $simDrone.sPose.pos
+	$simControl.step( pos.x,pos.y,pos.z,0.0 )
+	
+
+	$Main.plots[0].apply($simDrone.sAcceleration.x)
+	$Main.plots[1].apply($simControl.expected_a.x)
+	$Main.plots[2].apply($simDrone.sVelocity.x)
+	$Main.plots[3].apply($simControl.expected_v.x)
+
+	$Main.traces[0].apply($simDrone.sPose.pos)
+
+	if $Main.plotsFollowCam
+		i=0
+		$Main.plots.foreach do |p|
+			pos = $Camera.nav.pos + $Camera.nav.uf()*1.5
+			j = i/2
+			pos += $Camera.nav.ur()*(j*0.6-1.0)
+			pos += $Camera.nav.uu()*0.5
+
+			p.pose.pos.lerpTo( pos, 0.1)
+			p.pose.quat.slerpTo( $Camera.nav.quat, 0.1)
+			i += 1
+		end
+	end
+end
+
+
+
+
+
+
