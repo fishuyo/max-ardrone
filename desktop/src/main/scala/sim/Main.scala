@@ -44,10 +44,19 @@ object Main extends App with GLAnimatable{
   plots += new Plot2D(100, 15.f)
   plots(2).pose.pos = Vec3(2.f, 2.f, 0.f)
   plots += new Plot2D(100, 15.f)
-  plots(3).pose.pos = Vec3(2.f, 2.f, 0.f)
+  plots(3).pose.pos = Vec3(2.f, 2.f, 0.f) 
   plots(3).color = Vec3(2.f,0.f,0.f)
 
+  plots += new Plot2D(100, 15.f)
+  plots(4).pose.pos = Vec3(4.f, 2.f, 0.f)
+  plots += new Plot2D(100, 15.f)
+  plots(5).pose.pos = Vec3(4.f, 2.f, 0.f)
+  plots(5).color = Vec3(2.f,0.f,0.f)
+
   //Traces
+  traces += new Trace3D(100)
+  traces += new Trace3D(100)
+  traces += new Trace3D(100)
   traces += new Trace3D(100)
 
 

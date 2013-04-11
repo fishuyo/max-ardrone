@@ -52,10 +52,14 @@ mz=0.0
 Pad.clear()
 Pad.connect()
 Pad.bind( lambda{|i,f|           # i -> number of fingers detected
-	if i == 2					 # f -> array of (x,y,dx,dy)
+							     # f -> array of (x,y,dx,dy)
+	
+	# use two fingers to change destination on xz plane
+	if i == 2					 
 		mx = mx + f[2]*0.05
 		mz = mz + f[3]*-0.05
 		$simControl.moveTo(mx,my,mz,0.0)
+	# use three fingers to change destination on xy plane
 	elsif i == 3					
 		mx = mx + f[2]*0.05
 		my = my + f[3]*0.05
@@ -82,12 +86,13 @@ def step(dt)
 	$simControl.step( pos.x,pos.y,pos.z,0.0 )
 	
 
-	# update plot data
+	# add data points to plots
 	$Main.plots[0].apply($simDrone.sAcceleration.x)
 	$Main.plots[1].apply($simControl.expected_a.x)
 	$Main.plots[2].apply($simDrone.sVelocity.x)
 	$Main.plots[3].apply($simControl.expected_v.x)
 
+	# add Vec3 point to 3d trace of drones position
 	$Main.traces[0].apply($simDrone.sPose.pos)
 
 	# have plots follow camera

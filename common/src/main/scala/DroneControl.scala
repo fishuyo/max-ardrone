@@ -390,8 +390,10 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
   ////////////////////////////////////////////////////////////////////////////
   // STEP 2.0
   ////////////////////////////////////////////////////////////////////////////
-  def step2(x:Float,y:Float,z:Float,qx:Float,qy:Float,qz:Float,qw:Float) = step2( Pose(Vec3(x,y,z),Quat(qw,qx,qy,qz)))
-
+  def step2(x:Float,y:Float,z:Float,qx:Float,qy:Float,qz:Float,qw:Float){
+    step2( Pose(Vec3(x,y,z),Quat(qw,qx,qy,qz)))
+  }
+  
   def step2(p:Pose){
 
     if( !flying || !navigating ){ return } //navmove(0.f,0.f,0.f,0.f); return }
@@ -530,7 +532,7 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
     var dw = destYaw - tYaw
     if( dw > 180.f ) dw -= 360.f 
     if( dw < -180.f ) dw += 360.f
-     
+
     if( math.abs(dw) > yawThresh ){ 
       hover = false
       if( !switchRot ) r = -rotSpeed else r = rotSpeed
