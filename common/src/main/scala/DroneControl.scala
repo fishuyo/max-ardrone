@@ -47,8 +47,8 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
 	var tYaw = 0.f; var destYaw = 0.f
   var err=Vec3()
   var d_err=Vec3()
-  var kpdd_xy=Vec3(.5f,1.f,0)
-  var kpdd_z=Vec3(1.f,1.f,0)
+  var kpdd_xy=Vec3(.5f,10.f,0)
+  var kpdd_z=Vec3(1.f,.1f,0)
 
 	//state for controller v2 (DroneControlv0.4)
 	var destPose = Pose()
