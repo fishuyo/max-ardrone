@@ -45,6 +45,9 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
 	var tVel = Vec3()
 	var tAcc = Vec3()
 	var tYaw = 0.f; var destYaw = 0.f
+  var err=Vec3()
+  var d_err=Vec3()
+  var kpdd_xy=Vec3(.5f,1.f,0)
 
 	//state for controller v2 (DroneControlv0.4)
 	var destPose = Pose()
@@ -58,6 +61,7 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
   var (t,time1,time2,d0,neg) = (Vec3(),Vec3(),Vec3(),Vec3(),Array[Boolean](false,false,false))
   var expected_a = Vec3()
   var expected_v = Vec3()
+  var expected_x = Vec3()
   var (kp,kd,kdd) = (Vec3(1.85,8.55,1.85),Vec3(.75),Vec3(1))  // pdd equation constants
 
   // controller outputs (% of maximum)(delta relates to angVel and to jerk)
@@ -409,7 +413,7 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
     val v = (p.pos - tPose.pos) / dt
 
     // update tracked state
-    val a = (v - tVel2) / dt
+    val a =  p.uu() * ((9.8f + control.z)/p.uu().y) //1.f //(v - tVel2) / dt
     tJerk = (a - tAcc2) / dt
     tAcc2.set(a)
     tVel2.set(v)
@@ -449,6 +453,7 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
 
           // calculate desired acceleration value based on the differences of expected vs actual positions, velocities, and accelerations
           val d = dcurve(time1(i),time2(i),neg(i))(t(i))
+          expected_x(i) = d
           val dd = vcurve(time1(i),time2(i),neg(i))(t(i))
           expected_v(i) = dd
           val ddd = acurve(time1(i),time2(i),neg(i))(t(i))
@@ -542,13 +547,16 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
       //return
     }
 
-    val dir = (dest - (tPos+tVel))
+    val dir = (dest - (tPos))
     val dp = dir.mag
+    d_err = dir - err
+    err.set(dir)
+
     if( dp  > posThresh ){
       hover = false
       val cos = math.cos(w.toRadians)
       val sin = math.sin(w.toRadians)
-      val d = (dest - tPos).normalize
+      val d = err*kpdd_xy.x + d_err*kpdd_xy.y//(dest - tPos).normalize
       ud = d.y * vmoveSpeed
 
       //assumes drone oriented 0 degrees looking down negative z axis, positive x axis to its right
@@ -558,6 +566,10 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
         tilt *= dp
         if( tilt.x > 1.f || tilt.y > 1.f) tilt = tilt.normalize       
       }
+
+      if( math.abs(tilt.x) > 1.f) tilt.x = tilt.x / math.abs(tilt.x)
+      if( math.abs(tilt.y) > 1.f) tilt.y = tilt.y / math.abs(tilt.y)
+      if( math.abs(ud) > 1.f) ud = ud / math.abs(ud)
       
     }else nextWaypoint
 

@@ -58,6 +58,17 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
   var expected_a = Vec3()
   var (kp,kd,kdd) = (Vec3(1.85,8.55,1.85),Vec3(.75),Vec3(1))
 
+
+  //version 1
+  var destPos = Vec3()
+  var tPos = Vec3()
+  var tVel = Vec3()
+  var tAcc = Vec3()
+  var tYaw = 0.f;
+  var err=Vec3()
+  var d_err=Vec3()
+  var kpdd_xy=Vec3(.5f,1.f,0)
+
   // destination / path info
   var dest = Pose()
 
@@ -272,8 +283,8 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
     while( destYaw < -180.f ) destYaw += 360.f
     while( destYaw > 180.f ) destYaw -= 360.f
     navigating = true
-    t.set(0.f)
-    expected_a.set(0.f)
+    t.set(0.f,0.f,0.f)
+    expected_a.set(0.f,0.f,0.f)
   }
 
   def lookAt( x:Float, y:Float, z:Float){
@@ -448,15 +459,17 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
 
   def step(x:Float,y:Float,z:Float,w:Float ){
     if( homePose == null ) homePose = Pose(Vec3(x,y,z),Quat())
-    if( !ready || !flying || !navigating ) return
+    if( !flying || !navigating ) return
+
     var tilt = Vec3(0.f)
     var (ud,r) = (0.f,0.f)
     var hover = useHover
+    var switchRot = false
 
     var p = Vec3(x,y,z)
-    vel = p - pos
+    tVel = p - tPos
 
-    if( vel.x == 0.f && vel.y == 0.f && vel.z == 0.f ){
+    if( tVel.x == 0.f && tVel.y == 0.f && tVel.z == 0.f ){
       dropped += 1
       if(dropped > 5){
         println("lost tracking or step size too short!!!") // TODO
@@ -465,18 +478,20 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
       }
     }else dropped = 0
 
-    pos.set(p) //check this
-    yaw = w; while( yaw < -180.f ) yaw += 360.f; while( yaw > 180.f) yaw -= 360.f
+    tPos.set(p)
+    tYaw = w; while( tYaw < -180.f ) tYaw += 360.f; while( tYaw > 180.f) tYaw -= 360.f
 
     //if look always look where it's going
-    if(look) destYaw = math.atan2(dest.pos.z - pos.z, dest.pos.x - pos.x).toFloat.toDegrees + 90.f
-    else if( lookingAt != null ) destYaw = math.atan2(lookingAt.z - pos.z, lookingAt.x - pos.x).toFloat.toDegrees + 90.f
+    //if(look) destYaw = math.atan2(dest.pos.z - pos.z, dest.pos.x - tPos.x).toFloat.toDegrees + 90.f
+    //else if( lookingAt != null ) destYaw = math.atan2(lookingAt.z - tPos.z, lookingAt.x - tPos.x).toFloat.toDegrees + 90.f
+    
     while( destYaw < -180.f ) destYaw += 360.f
     while( destYaw > 180.f ) destYaw -= 360.f
 
-    var dw = destYaw - yaw
+    var dw = destYaw - tYaw
     if( dw > 180.f ) dw -= 360.f 
-    if( dw < -180.f ) dw += 360.f 
+    if( dw < -180.f ) dw += 360.f
+
     if( math.abs(dw) > yawThresh ){ 
       hover = false
       if( !switchRot ) r = -rotSpeed else r = rotSpeed
@@ -486,13 +501,16 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
       //return
     }
 
-    val dir = (dest.pos - (pos+vel))
+    val dir = (destPos - (tPos))
     val dp = dir.mag
+    d_err = dir - err
+    err.set(dir)
+
     if( dp  > posThresh ){
       hover = false
       val cos = math.cos(w.toRadians)
       val sin = math.sin(w.toRadians)
-      val d = (dest.pos - pos).normalize
+      val d = err*kpdd_xy.x + d_err*kpdd_xy.y//(dest - tPos).normalize
       ud = d.y * vmoveSpeed
 
       //assumes drone oriented 0 degrees looking down negative z axis, positive x axis to its right
@@ -502,18 +520,16 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
         tilt *= dp
         if( tilt.x > 1.f || tilt.y > 1.f) tilt = tilt.normalize       
       }
+
+      if( math.abs(tilt.x) > 1.f) tilt.x = tilt.x / math.abs(tilt.x)
+      if( math.abs(tilt.y) > 1.f) tilt.y = tilt.y / math.abs(tilt.y)
+      if( math.abs(ud) > 1.f) ud = ud / math.abs(ud)
       
-    } else if( goingHome && vel.mag < .05f ){
-      drone.land
-      posThresh = .33f
-      smooth = false
-      goingHome = false
-      return
     }else nextWaypoint
 
-    if(hover) drone.hover
+    if(hover) drone.hover()
     else if(rotFirst && r != 0.f) drone.move(0,0,0,r)
-    else drone.move(tilt.x,tilt.y,ud,r)      
+    else drone.move(tilt.x,tilt.y,ud,r)           
   }
 
   def logger( l:String="INFO" ){
