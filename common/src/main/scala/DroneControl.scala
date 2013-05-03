@@ -48,6 +48,7 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
   var err=Vec3()
   var d_err=Vec3()
   var kpdd_xy=Vec3(.5f,1.f,0)
+  var kpdd_z=Vec3(1.f,1.f,0)
 
 	//state for controller v2 (DroneControlv0.4)
 	var destPose = Pose()
@@ -557,7 +558,7 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
       val cos = math.cos(w.toRadians)
       val sin = math.sin(w.toRadians)
       val d = err*kpdd_xy.x + d_err*kpdd_xy.y//(dest - tPos).normalize
-      ud = d.y * vmoveSpeed
+      ud = (err.y*kpdd_z.x + d_err.y*kpdd_z.y) * vmoveSpeed
 
       //assumes drone oriented 0 degrees looking down negative z axis, positive x axis to its right
       tilt.y = (d.x*sin + d.z*cos).toFloat * moveSpeed //forward backward tilt

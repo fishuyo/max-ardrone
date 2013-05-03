@@ -97,6 +97,7 @@ Trackpad.bind( lambda{|i,f|           # i -> number of fingers detected
 def step(dt)
 
 	$simControl.kpdd_xy.set(0.5,10.0,0)
+	$simControl.kpdd_z.set(1.0,0.1,0)
 	# New step function
 	#$simControl.step2( $simDrone.sPose )
 
