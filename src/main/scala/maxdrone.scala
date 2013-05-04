@@ -45,6 +45,15 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
   // legacy state
   var pos = Vec3()
   var yaw = 0.f; var destYaw = 0.f;
+  var destPos = Vec3()
+  var tPos = Vec3()
+  var tVel = Vec3()
+  var tAcc = Vec3()
+  var tYaw = 0.f;
+  var err=Vec3()
+  var d_err=Vec3()
+  var kpdd_xy=Vec3(.5f,10.f,0)
+  var kpdd_z=Vec3(1.f,.1f,0)
 
   // drone state measured from tracker
   var pose = Pose()
@@ -118,9 +127,13 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
 
   var qSize = 0
 
-  post("DroneControl version 0.4.0")
+  post("DroneControl version 0.4.1")
   
 
+  def setContants(p1:Float,d1:Float,p2:Float,d2:Float){
+    kpdd_xy.set(p1,d1,0)
+    kpdd_z.set(p2,d2,0)
+  }
   def connect(){
     if( drone != null){
       post("Drone already connected.")
@@ -449,14 +462,15 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
   def step(x:Float,y:Float,z:Float,w:Float ){
     if( homePose == null ) homePose = Pose(Vec3(x,y,z),Quat())
     if( !ready || !flying || !navigating ) return
+
     var tilt = Vec3(0.f)
     var (ud,r) = (0.f,0.f)
     var hover = useHover
 
     var p = Vec3(x,y,z)
-    vel = p - pos
+    tVel = p - tPos
 
-    if( vel.x == 0.f && vel.y == 0.f && vel.z == 0.f ){
+    if( tVel.x == 0.f && tVel.y == 0.f && tVel.z == 0.f ){
       dropped += 1
       if(dropped > 5){
         println("lost tracking or step size too short!!!") // TODO
@@ -465,18 +479,20 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
       }
     }else dropped = 0
 
-    pos.set(p) //check this
-    yaw = w; while( yaw < -180.f ) yaw += 360.f; while( yaw > 180.f) yaw -= 360.f
+    tPos.set(p)
+    tYaw = w; while( tYaw < -180.f ) tYaw += 360.f; while( tYaw > 180.f) tYaw -= 360.f
 
     //if look always look where it's going
-    if(look) destYaw = math.atan2(dest.pos.z - pos.z, dest.pos.x - pos.x).toFloat.toDegrees + 90.f
-    else if( lookingAt != null ) destYaw = math.atan2(lookingAt.z - pos.z, lookingAt.x - pos.x).toFloat.toDegrees + 90.f
+    //if(look) destYaw = math.atan2(dest.pos.z - pos.z, dest.pos.x - tPos.x).toFloat.toDegrees + 90.f
+    //else if( lookingAt != null ) destYaw = math.atan2(lookingAt.z - tPos.z, lookingAt.x - tPos.x).toFloat.toDegrees + 90.f
+    
     while( destYaw < -180.f ) destYaw += 360.f
     while( destYaw > 180.f ) destYaw -= 360.f
 
-    var dw = destYaw - yaw
+    var dw = destYaw - tYaw
     if( dw > 180.f ) dw -= 360.f 
-    if( dw < -180.f ) dw += 360.f 
+    if( dw < -180.f ) dw += 360.f
+
     if( math.abs(dw) > yawThresh ){ 
       hover = false
       if( !switchRot ) r = -rotSpeed else r = rotSpeed
@@ -486,14 +502,17 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
       //return
     }
 
-    val dir = (dest.pos - (pos+vel))
+    val dir = (destPos - (tPos))
     val dp = dir.mag
+    d_err = dir - err
+    err.set(dir)
+
     if( dp  > posThresh ){
       hover = false
       val cos = math.cos(w.toRadians)
       val sin = math.sin(w.toRadians)
-      val d = (dest.pos - pos).normalize
-      ud = d.y * vmoveSpeed
+      val d = err*kpdd_xy.x + d_err*kpdd_xy.y//(dest - tPos).normalize
+      ud = (err.y*kpdd_z.x + d_err.y*kpdd_z.y) * vmoveSpeed
 
       //assumes drone oriented 0 degrees looking down negative z axis, positive x axis to its right
       tilt.y = (d.x*sin + d.z*cos).toFloat * moveSpeed //forward backward tilt
@@ -502,16 +521,14 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
         tilt *= dp
         if( tilt.x > 1.f || tilt.y > 1.f) tilt = tilt.normalize       
       }
+
+      if( math.abs(tilt.x) > 1.f) tilt.x = tilt.x / math.abs(tilt.x)
+      if( math.abs(tilt.y) > 1.f) tilt.y = tilt.y / math.abs(tilt.y)
+      if( math.abs(ud) > 1.f) ud = ud / math.abs(ud)
       
-    } else if( goingHome && vel.mag < .05f ){
-      drone.land
-      posThresh = .33f
-      smooth = false
-      goingHome = false
-      return
     }else nextWaypoint
 
-    if(hover) drone.hover
+    if(hover) drone.hover()
     else if(rotFirst && r != 0.f) drone.move(0,0,0,r)
     else drone.move(tilt.x,tilt.y,ud,r)      
   }
