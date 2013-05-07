@@ -409,6 +409,7 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
       hover = false
       if( !switchRot ) rot = -rotSpeed else rot = rotSpeed
       rot *= dw * rotK.x
+      if( math.abs(rot) > 1.f) rot = rot / math.abs(rot)
 
     }
 
@@ -436,7 +437,6 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
       if( math.abs(control.x) > 1.f) control.x = control.x / math.abs(control.x)
       if( math.abs(control.y) > 1.f) control.y = control.y / math.abs(control.y)
       if( math.abs(control.z) > 1.f) control.z = control.z / math.abs(control.z)
-      if( math.abs(rot) > 1.f) rot = rot / math.abs(rot)
       
     }else nextWaypoint
 
