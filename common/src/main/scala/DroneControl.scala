@@ -77,6 +77,7 @@ class DroneControl(var ip:String="192.168.1.1") extends NavDataListener with Dro
 	var moveSpeed = 1.f
   def setMoveSpeed(f:Float) = moveSpeed = f
 	var vmoveSpeed = 1.f
+  def setVMoveSpeed(f:Float) = vmoveSpeed = f
 	var rotSpeed = 1.f
 	var smooth = false
   var rotFirst = false
