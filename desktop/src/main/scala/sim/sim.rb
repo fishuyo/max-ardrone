@@ -122,12 +122,12 @@ def step(dt)
 
 	# add data points to plots
 	Main.plots[0].apply($simDrone.sAcceleration.x)
-	Main.plots[1].apply($simControl.expected_a.x)
+	#Main.plots[1].apply($simControl.expected_a.x)
 	Main.plots[2].apply($simDrone.sVelocity.x)
-	Main.plots[3].apply($simControl.expected_v.x)
-	d0 = $simControl.d0.x
+	#Main.plots[3].apply($simControl.expected_v.x)
+	d0 = 0 #$simControl.d0.x
 	Main.plots[4].apply($simDrone.sPose.pos.x-d0)
-	Main.plots[5].apply($simControl.expected_x.x-d0)
+	#Main.plots[5].apply($simControl.expected_x.x-d0)
 
 	# add Vec3 point to 3d trace of drones position
 	Main.traces[0].apply($simDrone.sPose.pos)
