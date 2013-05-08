@@ -88,9 +88,9 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
   var maxRot = 3.0f    //(.7 - 6.11 rad/s)
   var posThresh = .1f  // threshold distance from destination or waypoint
   var yawThresh = 10.f // threshold rotation from destination yaw
-  var moveSpeed = 1.f  // planar move speed multiplier
+  var moveSpeed = .3f  // planar move speed multiplier
   def setMoveSpeed(f:Float) = moveSpeed = f
-  var vmoveSpeed = 1.f // vertical move speed multiplier
+  var vmoveSpeed = .6f // vertical move speed multiplier
   def setVMoveSpeed(f:Float) = vmoveSpeed = f
   var rotSpeed = 1.f  // rotational speed multiplier
   var smooth = false  // 
@@ -119,6 +119,10 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
   //////////////////////////////////////////////////////////////////////
   // member functions
   //////////////////////////////////////////////////////////////////////
+
+  def setPIDxy( p1:Float, d1:Float ) = kpdd_xy.set(p1,d1,0)
+  def setPIDz( p1:Float, d1:Float ) = kpdd_z.set(p1,d1,0)
+  def setPIDrot( p1:Float) = kpdd_z.set(p1,0,0)
 
   def connect(){
     if( drone != null){
@@ -405,7 +409,7 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
     dw *= (if( (destPose.quat.toZ cross p.quat.toZ).y > 0.f ) -1.f else 1.f)
 
     rot = 0.f
-    if( math.abs(dw) > yawThresh ){ 
+    if( math.abs(dw) > yawThresh.toRadians ){ 
       hover = false
       if( !switchRot ) rot = -rotSpeed else rot = rotSpeed
       rot *= dw * rotK.x
@@ -414,7 +418,7 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
     }
 
     // position error
-    val dir = (destPose.pos - (pos))
+    val dir = (destPose.pos - tPose.pos)
     val dist = dir.mag
     d_err = dir - err
     err.set(dir)
@@ -422,8 +426,8 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
     control.zero
     if( dist  > posThresh ){
       hover = false
-      val cos = math.cos(w.toRadians)
-      val sin = math.sin(w.toRadians)
+      val cos = math.cos(w)
+      val sin = math.sin(w)
 
       val d = err*kpdd_xy.x + d_err*kpdd_xy.y
       val ud = (err.y*kpdd_z.x + d_err.y*kpdd_z.y) * vmoveSpeed
