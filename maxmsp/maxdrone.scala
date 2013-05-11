@@ -34,7 +34,7 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
   declareAttribute("rotSpeed")
   declareAttribute("smooth")
   declareAttribute("rotFirst")
-  declareAttribute("look")
+  declareAttribute("lookAtDest")
   declareAttribute("useHover")
   declareAttribute("patrol")
   declareAttribute("switchRot")
@@ -63,6 +63,8 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
   var dropped = 0
 
   // navigation state
+  var lookAtDest = false
+  var isLookingAt = false
   var lookingAt:Vec3 = null
   var waypoints = new Queue[(Float,Float,Float,Float)]
 
@@ -76,7 +78,7 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
   var d_err=Vec3()
   var kpdd_xy=Vec3(.5f,10.f,0)
   var kpdd_z=Vec3(1.f,.1f,0)
-  var rotK = Vec3(1.f,0,0)
+  var rotK = Vec3(.318f,.1f,0)
 
   // controller outputs (% of maximum)(delta relates to angVel and to jerk)
   var control = Vec3()  // x -> left/right tilt, y -> forward/back tilt, z -> up/down throttle
@@ -95,7 +97,6 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
   var rotSpeed = 1.f  // rotational speed multiplier
   var smooth = false  // 
   var rotFirst = false  // rotate first before other movement
-  var look = false      // look toward destination when navigating
   var useHover = true  // use the hover command when not reaching destination
   var patrol = false   // loop waypoints
   var switchRot = true  // change the direction of rotation command (if tracker data reversed)
@@ -113,7 +114,7 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
   private var mat: JitterMatrix = _
 
 
-  println("DroneControl version 0.4.1")
+  println("DroneControl version 0.4.2")
   
 
   //////////////////////////////////////////////////////////////////////
@@ -229,11 +230,21 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
     drone.move(lr,fb,udv,rv) 
   }
 
+  def lookAt( x:Float, y:Float, z:Float ){
+    isLookingAt = true
+    lookAtDest = false
+    lookingAt = Vec3(x,y,z)
+  }
+  def dontLook(){
+    isLookingAt = false
+    lookAtDest = false
+  }
+
   def moveTo( x:Float,y:Float,z:Float,qx:Float,qy:Float,qz:Float,qw:Float ){
     moveTo( Pose(Vec3(x,y,z),Quat(qw,qx,qy,qz)) )
   }
   def moveTo( x:Float,y:Float,z:Float,w:Float=0.f ){
-    moveTo( Pose(Vec3(x,y,z),Quat().fromEuler(0,w.toRadians,0)) )
+    moveTo( Pose(Vec3(x,y,z),Quat().fromEuler((0.f,w*math.Pi.toFloat/180.f,0.f)) ) )
   }
   def moveTo( p:Pose ){
     if( goingHome ) return
@@ -375,7 +386,7 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
     step( Pose(Vec3(x,y,z),Quat(qw,qx,qy,qz)))
   }  
   def step(x:Float,y:Float,z:Float,w:Float=0.f ){
-    step( Pose(Vec3(x,y,z),Quat().fromEuler(0,w.toRadians,0)))
+    step( Pose(Vec3(x,y,z),Quat().fromEuler((0.f,w*math.Pi.toFloat/180.f,0.f))) )
   }
 
   def step(p:Pose){
@@ -399,17 +410,21 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
 
     tPose.set(p)
 
+    var destRotVec = Vec3()
+    var rotVec = p.uf().normalize()
+
     //if look always look where it's going
-    if(look) destYaw = math.atan2(destPose.pos.z - pos.z, destPose.pos.x - pos.x).toFloat.toDegrees + 90.f
-    else if( lookingAt != null ) destYaw = math.atan2(lookingAt.z - pos.z, lookingAt.x - pos.x).toFloat.toDegrees + 90.f
-    
+    if(lookAtDest) destRotVec.set( (destPose.pos - pos).normalize )//Quat().fromEuler((0.f,-1.f*(math.atan2(destPose.pos.z - pos.z, destPose.pos.x - pos.x).toFloat + math.Pi.toFloat/2.f),0.f))
+    else if( isLookingAt ) destRotVec.set( (lookingAt - pos).normalize ) //Quat().fromEuler((0.f,-1.f*(math.atan2(lookingAt.z - pos.z, lookingAt.x - pos.x).toFloat + math.Pi.toFloat/2.f),0.f))
+    else destRotVec.set( destPose.uf().normalize )
+
     // yaw error
     val w = p.quat.toEuler()._2
-    var dw = math.acos(destPose.quat.toZ dot p.quat.toZ).toFloat
-    dw *= (if( (destPose.quat.toZ cross p.quat.toZ).y > 0.f ) -1.f else 1.f)
+    var dw = math.acos((destRotVec dot rotVec)).toFloat
+    dw *= (if( (destRotVec cross rotVec).y > 0.f ) -1.f else 1.f)
 
     rot = 0.f
-    if( math.abs(dw) > yawThresh.toRadians ){ 
+    if( math.abs(dw) > (yawThresh*math.Pi/180.f) ){ 
       hover = false
       if( !switchRot ) rot = -rotSpeed else rot = rotSpeed
       rot *= dw * rotK.x
