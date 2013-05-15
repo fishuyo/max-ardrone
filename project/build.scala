@@ -8,7 +8,7 @@ import ProguardPlugin._
 object Settings {
   
   lazy val common = Defaults.defaultSettings ++ Seq (
-    version := "0.4.1",
+    version := "0.4.2",
     scalaVersion := "2.9.2",
     resolvers ++= Seq(
       "NativeLibs4Java Repository" at "http://nativelibs4java.sourceforge.net/maven/",
@@ -56,6 +56,7 @@ object Settings {
       "-keep class DroneControl { *; }",
       "-keep class com.fishuyo.drone.DroneControl { *; }",
       "-keep class com.fishuyo.maths.Vec3",
+      "-keep class com.fishuyo.maths.Quat",
       """-keepclasseswithmembers public class * {
         public static void main(java.lang.String[]);
       }

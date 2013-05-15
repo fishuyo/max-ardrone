@@ -85,7 +85,7 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
   var rot = 0.f         // rotate ccw/cw speed
 
   // controller params
-  var maxEuler = .6f  //(0 - .52 rad)
+  var maxEuler = .3f  //(0 - .52 rad)
   var maxVert = 1000   //(200-2000 mm/s)
   var maxRot = 3.0f    //(.7 - 6.11 rad/s)
   var posThresh = .1f  // threshold distance from destination or waypoint
@@ -114,7 +114,7 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
   private var mat: JitterMatrix = _
 
 
-  println("DroneControl version 0.4.2")
+  println("DroneControl version 0.4.2a")
   
 
   //////////////////////////////////////////////////////////////////////
@@ -123,7 +123,7 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
 
   def setPIDxy( p1:Float, d1:Float ) = kpdd_xy.set(p1,d1,0)
   def setPIDz( p1:Float, d1:Float ) = kpdd_z.set(p1,d1,0)
-  def setPIDrot( p1:Float) = kpdd_z.set(p1,0,0)
+  def setPIDrot( p1:Float) = rotK.set(p1,0,0)
 
   def connect(){
     if( drone != null){
@@ -279,8 +279,9 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
     maxEuler = v
     setConfigOption("control:euler_angle_max",v.toString)
   }
-  def setMaxVertical(v:Int){
-    maxVert = v
+  def setMaxVertical(v:Float){
+
+    maxVert = (v*1000.f).toInt
     setConfigOption("control:control_vz_max",v.toString)
   } 
   def setMaxRotation(v:Float){
@@ -419,7 +420,6 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
     else destRotVec.set( destPose.uf().normalize )
 
     // yaw error
-    val w = p.quat.toEuler()._2
     var dw = math.acos((destRotVec dot rotVec)).toFloat
     dw *= (if( (destRotVec cross rotVec).y > 0.f ) -1.f else 1.f)
 
@@ -441,15 +441,16 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
     control.zero
     if( dist  > posThresh ){
       hover = false
-      val cos = math.cos(w)
-      val sin = math.sin(w)
+      // val w = p.quat.toEuler()._2
+      // val cos = math.cos(w)
+      // val sin = math.sin(w)
 
       val d = err*kpdd_xy.x + d_err*kpdd_xy.y
       val ud = (err.y*kpdd_z.x + d_err.y*kpdd_z.y) * vmoveSpeed
 
       //assumes drone oriented 0 degrees looking down negative z axis, (-90 degrees)positive x axis to its right, 
-      control.y = (d.x*sin + d.z*cos).toFloat * moveSpeed //forward backward control
-      control.x = (d.x*cos - d.z*sin).toFloat * moveSpeed //left right control
+      control.y = d dot tPose.quat.toZ * moveSpeed //(d.x*sin + d.z*cos).toFloat * moveSpeed //forward backward control
+      control.x = d dot tPose.quat.toX * moveSpeed //(d.x*cos - d.z*sin).toFloat * moveSpeed //left right control
 
       control.z = ud
 
