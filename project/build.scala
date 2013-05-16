@@ -38,7 +38,7 @@ object Settings {
   )
 
   lazy val maxmsp = Defaults.defaultSettings ++ Seq (
-    version := "0.4.1",
+    version := "0.4.2",
     scalaVersion := "2.9.2",
     fork in Compile := true,
     //mainClass := Some("Main")
