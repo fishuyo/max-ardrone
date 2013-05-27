@@ -282,7 +282,7 @@ class DroneControl extends MaxObject with NavDataListener with DroneVideoListene
   def setMaxVertical(v:Float){
 
     maxVert = (v*1000.f).toInt
-    setConfigOption("control:control_vz_max",v.toString)
+    setConfigOption("control:control_vz_max",maxVert.toString)
   } 
   def setMaxRotation(v:Float){
     maxRot = v
