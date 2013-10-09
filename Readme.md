@@ -1,3 +1,7 @@
+
+This repo is deprecated use [OpenDroneControl](http://opendronecontrol.org) instead: http://github.com/opendronecontrol/odc 
+======
+
 maxdrone - DroneControl
 ========
 
